@@ -7,11 +7,11 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Capped.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-contract MoreNFTTokenomics is ERC20Capped, Ownable {
+abstract contract ERC20Vesting is ERC20Capped, Ownable {
     using SafeERC20 for IERC20;
 
     IERC20 public mainToken;
-    mapping(address => uint256) public monthlyClaim;
+    mapping(address => uint256) public nextMonthToClaim;
     uint256 public totalClaimed;
 
     uint256 public tge;
@@ -22,35 +22,35 @@ contract MoreNFTTokenomics is ERC20Capped, Ownable {
         require(tge == 0, "TGE already set");
         tge = _time;
         mainToken = IERC20(_mainToken);
-        require(mainToken.balanceOf(address(this)) > ERC20.totalSupply(), "Main token contract must transfer seed token to this contract");
+        require(mainToken.balanceOf(address(this)) >= ERC20.totalSupply(), "Main token contract must transfer seed token to this contract");
         emit TGE(_time, _mainToken);
     }
 
     function claim(address _to, uint256 _untilMonth) external {
         require(_untilMonth <= currentMonth(block.timestamp), "Must wait tokenomics timeline");
-        uint256 claimableTokens;
-        for (uint256 i=monthlyClaim[_to]+1; i<=_untilMonth; i++) {
-            claimableTokens += _claimablePerMonth(_to, i);
-        }
+        uint256 claimableTokens = claimable(_to, _untilMonth);
         require(claimableTokens > 0, "Claiming 0 tokens");
-        mainToken.safeTransfer(_to, claimableTokens);
         totalClaimed += claimableTokens;
-        monthlyClaim[_to] = _untilMonth;
+        nextMonthToClaim[_to] = _untilMonth+1;
+        mainToken.safeTransfer(_to, claimableTokens);
         emit Claimed(_to, claimableTokens);
+    }
+
+    function claimable(address _by, uint256 _untilMonth) public view returns(uint256) {
+        uint256 claimableTokens;
+        for (uint256 i=nextMonthToClaim[_by]; i<=_untilMonth; i++) {
+            claimableTokens += _claimablePerMonth(_by, i);
+        }
+        return claimableTokens;
     }
 
     function _claimablePerMonth(address _to, uint256 _month) public view returns(uint256) {
         return _tokenClaimPerMonth(_month) * balanceOf(_to) / 10000;
+        // /10000 is 100 for the percentage and 100 for the hundreds of percentage
     }
 
-    function _tokenClaimPerMonth(uint256 _month) internal pure returns(uint256) {
-        require(_month > 0, "Seed token are locked for the first month");
-        if (_month == 1)
-            return 1000;
-        if (_month < 24)
-            return 375;
-        return 0;
-    }
+    // expressed in hundreds of percentage
+    function _tokenClaimPerMonth(uint256 _month) internal virtual pure returns(uint256);
 
     function currentMonth(uint256 _time) public view returns(uint256) {
         require(tge > 0, "TGE not set");
@@ -62,8 +62,8 @@ contract MoreNFTTokenomics is ERC20Capped, Ownable {
         address to,
         uint256 amount
     ) internal virtual override {
-        require(from == address(0), "Users' transfers are disabled on the Seed Contract");
-        require(tge == 0, "Can only mint before TGE");
+        super._beforeTokenTransfer(from, to, amount);
+        require(from == address(0), "Users' transfers are disabled on tokenomics contracts");
     }
 
     event TGE(uint256 time, address tokenAddress);

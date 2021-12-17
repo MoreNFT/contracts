@@ -1,27 +1,35 @@
-pragma solidity ^0.8.0;
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.2;
 
-import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Burnable.sol";
+import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/Counters.sol";
 
-contract MoreNFTCollection is ERC721Enumerable, ERC721URIStorage, ERC721Burnable, Ownable {
+import "./Creator.sol";
 
-    mapping(uint256 => address) public _creators;
+contract MoreNFTCollection is ERC721, ERC721Enumerable, ERC721URIStorage, Ownable, Creator {
+    using Counters for Counters.Counter;
 
-    constructor(string memory name_, string memory symbol_) ERC721(name_, symbol_) {}
+    Counters.Counter private _tokenIdCounter;
 
-    function safeMint(address creator, address to, uint256 tokenId, string memory uri) public onlyOwner {
+    constructor(string memory name, string memory symbol) ERC721(name, symbol) {}
+
+    function safeMint(address creator, address to, string memory uri) public onlyOwner {
+        uint256 tokenId = _tokenIdCounter.current();
+        _tokenIdCounter.increment();
         _safeMint(to, tokenId);
         _setTokenURI(tokenId, uri);
-        _creators[tokenId] = creator;
+        _setCreator(tokenId, creator);
     }
 
-    function getCreator(uint256 tokenId) public view returns(address) {
-        return _creators[tokenId];
-    }
+    // The following functions are overrides required by Solidity.
 
-    function _beforeTokenTransfer(address from, address to, uint256 tokenId) internal override(ERC721, ERC721Enumerable) {
+    function _beforeTokenTransfer(address from, address to, uint256 tokenId)
+        internal
+        override(ERC721, ERC721Enumerable)
+    {
         super._beforeTokenTransfer(from, to, tokenId);
     }
 
@@ -29,11 +37,21 @@ contract MoreNFTCollection is ERC721Enumerable, ERC721URIStorage, ERC721Burnable
         super._burn(tokenId);
     }
 
-    function tokenURI(uint256 tokenId) public view override(ERC721, ERC721URIStorage) returns (string memory) {
+    function tokenURI(uint256 tokenId)
+        public
+        view
+        override(ERC721, ERC721URIStorage)
+        returns (string memory)
+    {
         return super.tokenURI(tokenId);
     }
 
-    function supportsInterface(bytes4 interfaceId) public view override(ERC721, ERC721Enumerable) returns (bool) {
+    function supportsInterface(bytes4 interfaceId)
+        public
+        view
+        override(ERC721, ERC721Enumerable)
+        returns (bool)
+    {
         return super.supportsInterface(interfaceId);
     }
 }

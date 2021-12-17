@@ -1,22 +1,47 @@
 pragma solidity ^0.8.0;
 
-import "./MoreNFTTokenomics.sol";
-import "./Withdrawable.sol";
+//SPDX-License-Identifier: MIT
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-contract MoreNFTTokenomicsBuyable is MoreNFTTokenomics, Withdrawable {
+import "./ERC20Vesting.sol";
+import "./Referral.sol";
+import "./Withdrawable.sol";
+
+abstract contract ERC20VestingBuyable is ERC20Vesting, Referral, Withdrawable {
     using SafeERC20 for IERC20;
 
     mapping(address => uint256) public tokenPrice; //in thousandths
 
-    constructor(string memory _name, string memory _symbol, uint256 _cap) MoreNFTTokenomics(_name, _symbol, _cap) {}
+    uint256 public buyStart;
+    uint256 public buyEnd;
+
+    constructor(string memory _name, string memory _symbol, uint256 _cap) ERC20Vesting(_name, _symbol, _cap) {}
+
+    function setBuyTiming(uint256 _start, uint256 _end) public onlyOwner {
+        require(block.timestamp < _start, "Can't start buy in the past");
+        require(_start < _end, "Buy phase must have a duration");
+        buyStart = _start;
+        buyEnd = _end;
+        emit BuyTiming(_start, _end);
+    }
 
     function buy(uint256 _amount, address _with) external {
+        _buy(_amount, _with);
+    }
+
+    function buyWithReferral(uint256 _amount, address _with, address _referrer) external {
+        _buy(_amount, _with);
+        referralManager.refer(_referrer, _msgSender(), _amount);
+    }
+
+    function _buy(uint256 _amount, address _with) virtual internal {
+        require(block.timestamp > buyStart && block.timestamp < buyEnd, "Buy window is not open");
         require(tokenPrice[_with] != 0, "Buying with a not allowed token");
         IERC20(_with).safeTransferFrom(_msgSender(), address(this), buyPrice(_amount, _with));
         _mint(_msgSender(), _amount);
+        referralManager.enable(_msgSender());
         emit Bought(_msgSender(), _with, _amount);
     }
 
@@ -32,10 +57,11 @@ contract MoreNFTTokenomicsBuyable is MoreNFTTokenomics, Withdrawable {
     }
 
     function buyPrice(uint256 _amount, address _with) public view returns(uint256) {
-        return _amount / 1000 * tokenPrice[_with];
+        return _amount * tokenPrice[_with] / 1000;
     }
 
     event Bought(address indexed buyer, address indexed with, uint256 amount);
     event AcceptedToken(address indexed token, uint256 price);
     event RevokedToken(address indexed token);
+    event BuyTiming(uint256 start, uint256 end);
 }
