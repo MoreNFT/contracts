@@ -17,6 +17,7 @@ contract MoreNFTCollection is ERC721, ERC721Enumerable, ERC721URIStorage, Ownabl
     constructor(string memory name, string memory symbol) ERC721(name, symbol) {}
 
     function safeMint(address creator, address to, string memory uri) external onlyOwner {
+        require(keccak256(abi.encodePacked(uri)) != keccak256(abi.encodePacked("")), "URI can't be empty");
         uint256 tokenId = _tokenIdCounter.current();
         _tokenIdCounter.increment();
         _safeMint(to, tokenId);
