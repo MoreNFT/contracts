@@ -1,4 +1,4 @@
-pragma solidity ^0.8.0;
+pragma solidity 0.8.9;
 
 // SPDX-License-Identifier: UNLICENSED
 
@@ -11,7 +11,7 @@ abstract contract Withdrawable is Ownable {
 
     event Withdrawn(address from, address to, uint256 amount);
 
-    function withdraw(address _token, address _to) public onlyOwner {
+    function withdraw(address _token, address _to) external onlyOwner {
         IERC20 foreignToken = IERC20(_token);
         uint256 amount = foreignToken.balanceOf(address(this));
         require(amount > 0, "Can't withdraw 0");

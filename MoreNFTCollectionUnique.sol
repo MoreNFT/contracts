@@ -1,4 +1,4 @@
-pragma solidity ^0.8.0;
+pragma solidity 0.8.9;
 
 //SPDX-License-Identifier: MIT
 
@@ -13,7 +13,7 @@ contract MoreNFTCollectionUnique is ERC721Enumerable, ERC721URIStorage, ERC721Bu
 
     constructor(string memory name_, string memory symbol_) ERC721(name_, symbol_) {}
 
-    function safeMint(address creator, address to, uint256 tokenId, string memory uri) public onlyOwner {
+    function safeMint(address creator, address to, uint256 tokenId, string memory uri) external onlyOwner {
         _safeMint(to, tokenId);
         _setTokenURI(tokenId, uri);
         _setCreator(tokenId, creator);

@@ -1,4 +1,4 @@
-pragma solidity ^0.8.0;
+pragma solidity 0.8.9;
 
 //SPDX-License-Identifier: MIT
 
@@ -10,7 +10,7 @@ abstract contract ERC20VestingMintable is ERC20Vesting, Referral {
     constructor(string memory _name, string memory _symbol, uint256 _cap) ERC20Vesting(_name, _symbol, _cap) {}
 
     function mint(address _to, uint256 _amount) external virtual onlyOwner {
-        require(tge == 0 || block.timestamp < tge, "Can only mint before TGE");
+        require(tge == 0 || block.number < tge, "Can only mint before TGE");
         _mint(_to, _amount);
         referralManager.enable(_to);
     }

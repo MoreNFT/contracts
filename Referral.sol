@@ -1,4 +1,4 @@
-pragma solidity ^0.8.0;
+pragma solidity 0.8.9;
 
 //SPDX-License-Identifier: MIT
 
@@ -11,5 +11,8 @@ contract Referral is Ownable {
 
     function setReferralManager(address _referralManager) external onlyOwner {
         referralManager = IReferralManager(_referralManager);
+        emit ReferralManager(_referralManager);
     }
+
+    event ReferralManager(address manager);
 }

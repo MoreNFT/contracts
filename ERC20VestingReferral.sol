@@ -1,4 +1,4 @@
-pragma solidity ^0.8.0;
+pragma solidity 0.8.9;
 
 //SPDX-License-Identifier: MIT
 
@@ -35,7 +35,8 @@ abstract contract ERC20VestingReferral is ERC20Vesting {
         return referrers[referrer] != 0;
     }
 
-    function setSaleContract(address sale, uint256[2] memory percentages) external {
+    function setSaleContract(address sale, uint256[2] memory percentages) external onlyOwner {
+        require(percentages[0] + percentages[1] <= 100);
         saleContracts[sale] = percentages;
         emit SetSaleContract(sale, percentages[0], percentages[1]);
     }

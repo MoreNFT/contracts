@@ -1,4 +1,4 @@
-pragma solidity ^0.8.0;
+pragma solidity 0.8.9;
 
 //SPDX-License-Identifier: MIT
 
@@ -19,12 +19,16 @@ abstract contract ERC20VestingBuyable is ERC20Vesting, Referral, Withdrawable {
 
     constructor(string memory _name, string memory _symbol, uint256 _cap) ERC20Vesting(_name, _symbol, _cap) {}
 
-    function setBuyTiming(uint256 _start, uint256 _end) public onlyOwner {
-        require(block.timestamp < _start, "Can't start buy in the past");
+    function setBuyTiming(uint256 _start, uint256 _end) external onlyOwner {
+        require(block.number < _start, "Can't start buy in the past");
         require(_start < _end, "Buy phase must have a duration");
         buyStart = _start;
         buyEnd = _end;
         emit BuyTiming(_start, _end);
+    }
+
+    function isBuyOpen(uint256 _block) public view returns(bool) {
+        return _block > buyStart && _block < buyEnd;
     }
 
     function buy(uint256 _amount, address _with) external {
@@ -37,7 +41,7 @@ abstract contract ERC20VestingBuyable is ERC20Vesting, Referral, Withdrawable {
     }
 
     function _buy(uint256 _amount, address _with) virtual internal {
-        require(block.timestamp > buyStart && block.timestamp < buyEnd, "Buy window is not open");
+        require(isBuyOpen(block.number), "Buy window is not open");
         require(tokenPrice[_with] != 0, "Buying with a not allowed token");
         IERC20(_with).safeTransferFrom(_msgSender(), address(this), buyPrice(_amount, _with));
         _mint(_msgSender(), _amount);

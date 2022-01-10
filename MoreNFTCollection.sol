@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.2;
+pragma solidity 0.8.9;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
@@ -16,7 +16,7 @@ contract MoreNFTCollection is ERC721, ERC721Enumerable, ERC721URIStorage, Ownabl
 
     constructor(string memory name, string memory symbol) ERC721(name, symbol) {}
 
-    function safeMint(address creator, address to, string memory uri) public onlyOwner {
+    function safeMint(address creator, address to, string memory uri) external onlyOwner {
         uint256 tokenId = _tokenIdCounter.current();
         _tokenIdCounter.increment();
         _safeMint(to, tokenId);
