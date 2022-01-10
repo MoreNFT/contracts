@@ -11,7 +11,11 @@ abstract contract Withdrawable is Ownable {
 
     event Withdrawn(address from, address to, uint256 amount);
 
-    function withdraw(address _token, address _to) external onlyOwner {
+    function withdraw(address _token, address _to) virtual onlyOwner external {
+        _withdraw(_token, _to);
+    }
+
+    function _withdraw(address _token, address _to) virtual onlyOwner internal {
         IERC20 foreignToken = IERC20(_token);
         uint256 amount = foreignToken.balanceOf(address(this));
         require(amount > 0, "Can't withdraw 0");

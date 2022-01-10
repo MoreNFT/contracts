@@ -40,6 +40,10 @@ abstract contract ERC20VestingBuyable is ERC20Vesting, Referral, Withdrawable {
         referralManager.refer(_referrer, _msgSender(), _amount);
     }
 
+    function buyPrice(uint256 _amount, address _with) public view returns(uint256) {
+        return _amount * tokenPrice[_with] / 1000;
+    }
+
     function _buy(uint256 _amount, address _with) virtual internal {
         require(isBuyOpen(block.number), "Buy window is not open");
         require(tokenPrice[_with] != 0, "Buying with a not allowed token");
@@ -60,8 +64,9 @@ abstract contract ERC20VestingBuyable is ERC20Vesting, Referral, Withdrawable {
         emit RevokedToken(_token);
     }
 
-    function buyPrice(uint256 _amount, address _with) public view returns(uint256) {
-        return _amount * tokenPrice[_with] / 1000;
+    function withdraw(address _token, address _to) override onlyOwner external {
+        require(tokenPrice[_token] > 0, "Can't withdraw not accepted token");
+        _withdraw(_token, _to);
     }
 
     event Bought(address indexed buyer, address indexed with, uint256 amount);
